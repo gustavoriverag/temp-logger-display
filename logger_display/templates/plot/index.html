@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+
+{% block header %}
+<h1>{% block title %}Temperature measurements{% endblock %}</h1>
+
+{% endblock %}
+{% block content %}
+<ul class="timeframe">
+    <li class="{%if ts == '1h' %}active{% endif %}">
+        <a href="{{ url_for('plot.index', ts='1h') }}">1 hour</a>
+    </li>
+    <li class="{%if ts == '6h' %}active{% endif %}">
+        <a href="{{ url_for('plot.index', ts='6h') }}">6 hours</a>
+    </li>
+    <li class="{%if ts == '24h' %}active{% endif %}">
+        <a href="{{ url_for('plot.index', ts='24h') }}">24 hours</a>
+    </li>
+    <li class="{%if ts == '48h' %}active{% endif %}">
+        <a href="{{ url_for('plot.index', ts='48h') }}">48 hours</a>
+    <li class="{%if ts == '7d' %}active{% endif %}">
+        <a href="{{ url_for('plot.index', ts='7d') }}">7 days</a>
+    </li>
+    <li class="{%if ts == '30d' %}active{% endif %}">
+        <a href="{{ url_for('plot.index', ts='30d') }}">30 days</a>
+</ul>
+
+<div class="plot">
+    <canvas id="tempPlot" width="200" height="100"></canvas>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+
+    function plotData(data) {
+        const ctx = document.getElementById('tempPlot')
+        console.log(data);
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                datasets: [{
+                    label: 'Temperature (°C)',
+                    data: data,
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    fill: true
+                }]
+            },
+            // options: {
+            //     scales: {
+            //         x: {
+            //             type: 'time',
+            //             time: {
+            //                 unit: 'hour'
+            //             }
+            //         },
+            //         y: {
+            //             beginAtZero: true
+            //         }
+            //     }
+            // }
+        });
+    }
+    document.addEventListener('DOMContentLoaded', function () {
+        fetch("{{ url_for('plot.get_data', ts=ts) }}")
+            .then(response => response.json())
+            .then(data => plotData(data))
+            .catch(error => console.error('Error fetching data:', error));
+    });
+</script>
+{% endblock %}
