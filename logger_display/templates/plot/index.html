@@ -5,60 +5,66 @@
 
 {% endblock %}
 {% block content %}
-<ul class="timeframe">
-    <li class="{%if ts == '1h' %}active{% endif %}">
-        <a href="{{ url_for('plot.index', ts='1h') }}">1 hour</a>
-    </li>
-    <li class="{%if ts == '6h' %}active{% endif %}">
-        <a href="{{ url_for('plot.index', ts='6h') }}">6 hours</a>
-    </li>
-    <li class="{%if ts == '24h' %}active{% endif %}">
-        <a href="{{ url_for('plot.index', ts='24h') }}">24 hours</a>
-    </li>
-    <li class="{%if ts == '48h' %}active{% endif %}">
-        <a href="{{ url_for('plot.index', ts='48h') }}">48 hours</a>
-    <li class="{%if ts == '7d' %}active{% endif %}">
-        <a href="{{ url_for('plot.index', ts='7d') }}">7 days</a>
-    </li>
-    <li class="{%if ts == '30d' %}active{% endif %}">
-        <a href="{{ url_for('plot.index', ts='30d') }}">30 days</a>
-</ul>
+
+<h2> Timeframe selection</h2>
+<div class="timeframe">
+    <button class="{% if ts == '1hr' %}active{% endif %}"> <a href="{{ url_for('plot.index', ts='1h') }}">1 hour</a>
+    </button>
+    <button class="{% if ts == '6h' %}active{% endif %}"> <a href="{{ url_for('plot.index', ts='6h') }}">6 hours</a>
+    </button>
+    <button class="{% if ts == '24h' %}active{% endif %}"> <a href="{{ url_for('plot.index', ts='24h') }}">24 hours</a>
+    </button>
+    <button class="{% if ts == '48h' %}active{% endif %}"> <a href="{{ url_for('plot.index', ts='48h') }}">48 hours</a>
+    </button>
+    <button class="{% if ts == '7d' %}active{% endif %}"> <a href="{{ url_for('plot.index', ts='7d') }}">7 days</a>
+    </button>
+    <button class="{% if ts == '30d' %}active{% endif %}"> <a href="{{ url_for('plot.index', ts='30d') }}">30 days</a>
+    </button>
+</div>
+
 
 <div class="plot">
-    <canvas id="tempPlot" width="200" height="100"></canvas>
+    <canvas id="tempPlot" width="100" height="50"></canvas>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
+<script
+    src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
 <script>
 
     function plotData(data) {
-        const ctx = document.getElementById('tempPlot')
-        console.log(data);
+        const ctx = document.getElementById('tempPlot');
         new Chart(ctx, {
             type: 'line',
             data: {
                 datasets: [{
-                    label: 'Temperature (°C)',
+                    label: 'Measured temperature',
                     data: data,
                     borderColor: 'rgba(75, 192, 192, 1)',
                     backgroundColor: 'rgba(75, 192, 192, 0.2)',
                     fill: true
                 }]
             },
-            // options: {
-            //     scales: {
-            //         x: {
-            //             type: 'time',
-            //             time: {
-            //                 unit: 'hour'
-            //             }
-            //         },
-            //         y: {
-            //             beginAtZero: true
-            //         }
-            //     }
-            // }
+            options: {
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Time'
+                        },
+                        type: 'time',
+                        time: {
+                            tooltipFormat: 'MMM dd, yyyy HH:mm',
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'Temperature (°C)'
+                        },
+                    }
+                }
+            }
         });
     }
     document.addEventListener('DOMContentLoaded', function () {

@@ -13,8 +13,7 @@ def index(ts):
     Args:
         ts (str): Time frame for the plot, e.g., '1h', '6h', '24h', '48h', '7d', '30d'.
     """
-    data = get_data(ts)
-    return render_template('plot/index.html', data=data, ts=ts)
+    return render_template('plot/index.html', ts=ts)
 
     # Select data from different time frames
     # Automatically update data when inserted
