@@ -10,6 +10,9 @@ def create_app(test_config = None):
         # DATABASE = "/var/local/temp-logger/temps.db"
         DATABASE = os.path.join(app.instance_path, 'logger_data.db')
     )
+
+    app.config.from_prefixed_env()
+    
     if test_config is None:
         app.config.from_pyfile('config.py', silent=True)
     else: 
