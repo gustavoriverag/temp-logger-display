@@ -1,6 +1,6 @@
 #!/bin/bash -x
 
-VENV_DIR = "venv"
+VENV_DIR = "/opt/virtualenv/temp_logger"
 
 if [ ! -d "$VENV_DIR" ]; then
     echo "Creating virtual environment..."
@@ -17,8 +17,6 @@ pip install -e .
 pip install gunicorn
 
 [ "$UID" -eq 0 ] || exec sudo "$0" "$@"
-
-ln -sf "($PWD)/venv/" "/usr/local/bin/temp_logger/venv"
 
 cp ./logger_display.service /etc/systemd/system/logger_display.service
 
