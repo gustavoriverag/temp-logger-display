@@ -1,6 +1,7 @@
 #!/bin/bash -x
+[ "$UID" -eq 0 ] || exec sudo "$0" "$@"
 
-VENV_DIR = "/opt/virtualenv/temp_logger"
+VENV_DIR="/opt/virtualenv/temp_logger"
 
 if [ ! -d "$VENV_DIR" ]; then
     echo "Creating virtual environment..."
@@ -9,14 +10,11 @@ else
     echo "Virtual environment already exists."
 fi
 
-source "$VENV_DIR/bin/activate"
+"$VENV_DIR/bin/pip" install --upgrade pip
+"$VENV_DIR/bin/pip" install -e .
 
-pip install --upgrade pip
-pip install -e .
+"$VENV_DIR/bin/pip" install gunicorn
 
-pip install gunicorn
-
-[ "$UID" -eq 0 ] || exec sudo "$0" "$@"
 
 cp ./logger_display.service /etc/systemd/system/logger_display.service
 
