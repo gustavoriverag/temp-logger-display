@@ -26,6 +26,9 @@ def create_app(test_config = None):
     from . import db
     db.init_app(app)
 
+    from . import logger_server
+    logger_server.run_server_in_background()
+    
     from . import plot
     app.register_blueprint(plot.bp)
     app.add_url_rule('/', endpoint='index')
