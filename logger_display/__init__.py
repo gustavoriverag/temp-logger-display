@@ -27,7 +27,7 @@ def create_app(test_config = None):
     db.init_app(app)
 
     from . import logger_server
-    logger_server.run_server_in_background()
+    logger_server.run_server_in_background(app.config['DATABASE'])
     
     from . import plot
     app.register_blueprint(plot.bp)
