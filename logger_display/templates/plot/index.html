@@ -8,20 +8,30 @@
 
 <h2> Timeframe selection</h2>
 <div class="timeframe">
-    <button class="{% if ts == '1hr' %}active{% endif %}"> <a href="{{ url_for('plot.index', ts='1h') }}">1 hour</a>
-    </button>
-    <button class="{% if ts == '6h' %}active{% endif %}"> <a href="{{ url_for('plot.index', ts='6h') }}">6 hours</a>
-    </button>
-    <button class="{% if ts == '24h' %}active{% endif %}"> <a href="{{ url_for('plot.index', ts='24h') }}">24 hours</a>
-    </button>
-    <button class="{% if ts == '48h' %}active{% endif %}"> <a href="{{ url_for('plot.index', ts='48h') }}">48 hours</a>
-    </button>
-    <button class="{% if ts == '7d' %}active{% endif %}"> <a href="{{ url_for('plot.index', ts='7d') }}">7 days</a>
-    </button>
-    <button class="{% if ts == '30d' %}active{% endif %}"> <a href="{{ url_for('plot.index', ts='30d') }}">30 days</a>
-    </button>
+    <button class="timeframe-btn" data-ts="1h">1 hour</button>
+    <button class="timeframe-btn" data-ts="6h">6 hours</button>
+    <button class="timeframe-btn" data-ts="24h">24 hours</button>
+    <button class="timeframe-btn" data-ts="48h">48 hours</button>
+    <button class="timeframe-btn" data-ts="7d">7 days</button>
+    <button class="timeframe-btn" data-ts="30d">30 days</button>
 </div>
 
+<hr>
+<h2>Historical Weather Data</h2>
+<div class="weather-controls">
+    <div class="weather-inputs">
+        <label for="start-date">Start Date:</label>
+        <input type="date" id="start-date">
+
+        <label for="end-date">End Date:</label>
+        <input type="date" id="end-date">
+    </div>
+    <div class="weather-buttons">
+        <button id="load-weather-btn">Load Weather Data</button>
+        <button id="clear-weather-btn">Clear Weather Data</button>
+    </div>
+</div>
+<hr>
 
 <div class="plot">
     <canvas id="tempPlot" width="100" height="50"></canvas>
@@ -30,20 +40,19 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script
     src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
-<script>
+<script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8"></script>
+<script src=" https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.2.0/dist/chartjs-plugin-zoom.min.js "></script>
 
-    function plotData(data) {
+<script>
+    let currentTimeframe = '24h'; // Keep track of current timeframe
+    let chart; // Global chart variable
+
+    function initChart() {
         const ctx = document.getElementById('tempPlot');
-        new Chart(ctx, {
+        chart = new Chart(ctx, {
             type: 'line',
             data: {
-                datasets: [{
-                    label: 'Measured temperature',
-                    data: data,
-                    borderColor: 'rgba(75, 192, 192, 1)',
-                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                    fill: true
-                }]
+                datasets: []
             },
             options: {
                 scales: {
@@ -63,15 +72,173 @@
                             text: 'Temperature (°C)'
                         },
                     }
+                },
+                maintain_aspectRatio: false,
+                plugins: {
+                    zoom: {
+                        zoom: {
+                            wheel: {
+                                enabled: true,
+                            },
+                            pinch: {
+                                enabled: true
+                            },
+                            mode: 'x',
+                        },
+                        pan: {
+                            enabled: true,
+                            mode: 'x',
+                            threshold: 10, // Minimum distance to trigger panning
+                        }
+                    }
                 }
+            },
+
+        });
+    }
+
+    async function plotMeasuredData(timeframe) {
+        try {
+            const response = await fetch(`{{url_for("plot.get_data")}}${timeframe}`);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const data = await response.json();
+
+            // Find existing measured temperature dataset or add new one
+            let measuredDatasetIndex = chart.data.datasets.findIndex(dataset =>
+                dataset.label === 'Measured temperature'
+            );
+
+            const measuredDataset = {
+                label: 'Measured temperature',
+                data: data,
+                borderColor: 'rgba(75, 192, 192, 1)',
+                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                fill: true
+            };
+
+            if (measuredDatasetIndex >= 0) {
+                // Update existing dataset
+                chart.data.datasets[measuredDatasetIndex] = measuredDataset;
+            } else {
+                // Add new dataset
+                chart.data.datasets.push(measuredDataset);
+            }
+
+            chart.update();
+            chart.resetZoom(); // Reset zoom after loading new data
+        } catch (error) {
+            console.error('Error fetching measured data:', error);
+        }
+    }
+
+    async function plotHistoricalData(start_date, end_date) {
+        try {
+            const response = await fetch(`{{url_for("plot.get_ambient_data")}}${start_date}&${end_date}`);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const data = await response.json();
+
+            // console.log('Historical data:', data);
+            // Find existing historical temperature dataset or add new one
+            let historicalDatasetIndex = chart.data.datasets.findIndex(dataset =>
+                dataset.label === 'Historical temperature'
+            );
+
+            const historicalDataset = {
+                label: 'Historical temperature',
+                data: data,
+                borderColor: 'rgba(153, 102, 255, 1)',
+                backgroundColor: 'rgba(153, 102, 255, 0.2)',
+                fill: true
+            };
+
+            if (historicalDatasetIndex >= 0) {
+                // Update existing dataset
+                chart.data.datasets[historicalDatasetIndex] = historicalDataset;
+            } else {
+                // Add new dataset
+                chart.data.datasets.push(historicalDataset);
+            }
+
+            chart.update();
+            chart.resetZoom(); // Reset zoom after loading new data
+        } catch (error) {
+            console.error('Error fetching historical data:', error);
+        }
+    }
+
+    function setActiveTimeframe(selectedTimeframe) {
+        // Remove active class from all buttons
+        document.querySelectorAll('.timeframe-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+
+        // Add active class to selected button
+        document.querySelector(`[data-ts="${selectedTimeframe}"]`).classList.add('active');
+
+        // Update current timeframe
+        currentTimeframe = selectedTimeframe;
+    }
+
+    function setupWeatherControls() {
+        const loadBtn = document.getElementById('load-weather-btn');
+        const clearBtn = document.getElementById('clear-weather-btn');
+        const startDateInput = document.getElementById('start-date');
+        const endDateInput = document.getElementById('end-date');
+
+        // Set default dates (last 7 days)
+        const today = new Date();
+        const weekAgo = new Date(today);
+        weekAgo.setDate(today.getDate() - 7);
+
+        endDateInput.value = today.toISOString().split('T')[0];
+        startDateInput.value = weekAgo.toISOString().split('T')[0];
+
+        loadBtn.addEventListener('click', async () => {
+            const startDate = startDateInput.value;
+            const endDate = endDateInput.value;
+
+            if (startDate && endDate) {
+                await plotHistoricalData(startDate, endDate);
+            }
+        });
+
+        clearBtn.addEventListener('click', () => {
+            // Remove weather dataset
+            const weatherDatasetIndex = chart.data.datasets.findIndex(dataset =>
+                dataset.label === 'Weather data'
+            );
+            if (weatherDatasetIndex >= 0) {
+                chart.data.datasets.splice(weatherDatasetIndex, 1);
+                chart.update();
             }
         });
     }
+
+    function setupTimeframeButtons() {
+        document.querySelectorAll('.timeframe-btn').forEach(button => {
+            button.addEventListener('click', async (e) => {
+                const timeframe = e.target.getAttribute('data-ts');
+
+                // Update UI
+                setActiveTimeframe(timeframe);
+
+                // Update measured data
+                await plotMeasuredData(timeframe);
+            });
+        });
+    }
+
     document.addEventListener('DOMContentLoaded', function () {
-        fetch("{{ url_for('plot.get_data', ts=ts) }}")
-            .then(response => response.json())
-            .then(data => plotData(data))
-            .catch(error => console.error('Error fetching data:', error));
+        initChart();
+        setupTimeframeButtons();
+        // Set initial active button and load data
+        setActiveTimeframe(currentTimeframe);
+        setupWeatherControls()
+        plotMeasuredData(currentTimeframe);
     });
 </script>
 {% endblock %}
