@@ -4,6 +4,9 @@ version = "1.0.0"
 description = "Temperature logger display web server"
 dependencies = [
     "flask",
+    openmeteo_requests,
+    requests_cache,
+    retry_requests
 ]
 
 [build-system]
