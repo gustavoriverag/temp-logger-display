@@ -4,7 +4,7 @@ After=network-online.target
 Wants=network-online.target
 
 [Service]
-Type=Simple
+Type=ExecStart
 Environment=FLASK_SECRET_KEY=db137eff1995383dfffce6c44d5840d908b09e8d5ff6f4993a892bcfe5bb7b6c
 Environment=FLASK_DATABASE=/var/local/temp-logger/temps.db
 ExecStart=/opt/virtualenv/temp_logger/bin/gunicorn -b 0.0.0.0:8000 logger_display:create_app()
